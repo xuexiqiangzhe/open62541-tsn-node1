@@ -146,6 +146,8 @@ UA_Boolean           *pubCounterData6;//线程4
 UA_DataValue        *staticValueSource6;//线程4
 UA_Boolean           *pubCounterData7;//线程4
 UA_DataValue        *staticValueSource7;//线程4
+UA_UInt64           *pubCounterData8;//线程4
+UA_DataValue        *staticValueSource8;//线程4
 UA_UInt64           *repeatedCounterData[REPEATED_NODECOUNTS];
 
 
@@ -509,6 +511,7 @@ addDataSetField(UA_Server *server) {
      staticValueSource5 = UA_DataValue_new();
      staticValueSource6 = UA_DataValue_new();
      staticValueSource7 = UA_DataValue_new();
+     staticValueSource8 = UA_DataValue_new();
 #endif
     for (UA_Int32 iterator = 0; iterator <  REPEATED_NODECOUNTS; iterator++)
     {
@@ -539,6 +542,7 @@ addDataSetField(UA_Server *server) {
     UA_DataSetFieldConfig counterValue5;//线程4
     UA_DataSetFieldConfig counterValue6;//线程4
     UA_DataSetFieldConfig counterValue7;//线程4
+    UA_DataSetFieldConfig counterValue8;//线程4
     memset(&counterValue, 0, sizeof(UA_DataSetFieldConfig));
     memset(&counterValue1, 0, sizeof(UA_DataSetFieldConfig));//线程4
     memset(&counterValue2, 0, sizeof(UA_DataSetFieldConfig));//线程4
@@ -547,6 +551,7 @@ addDataSetField(UA_Server *server) {
     memset(&counterValue5, 0, sizeof(UA_DataSetFieldConfig));//线程4
     memset(&counterValue6, 0, sizeof(UA_DataSetFieldConfig));//线程4
     memset(&counterValue7, 0, sizeof(UA_DataSetFieldConfig));//线程4
+    memset(&counterValue8, 0, sizeof(UA_DataSetFieldConfig));//线程4
 #if defined PUBSUB_CONFIG_FASTPATH_FIXED_OFFSETS
     UA_UInt64 *countValue = UA_UInt64_new();
     pubCounterData = countValue;
@@ -564,6 +569,8 @@ addDataSetField(UA_Server *server) {
     pubCounterData6 = countValue6;//线程4
     UA_UInt64 *countValue7 = UA_UInt64_new();//为什么一定要这两句才不会内存泄露//线程4
     pubCounterData7 = countValue7;//线程4
+    UA_UInt64 *countValue8 = UA_UInt64_new();//为什么一定要这两句才不会内存泄露//线程4
+    pubCounterData8 = countValue8;//线程4
     UA_Variant_setScalar(&staticValueSource->value, countValue, &UA_TYPES[UA_TYPES_DOUBLE]);
     UA_Variant_setScalar(&staticValueSource1->value, pubCounterData1, &UA_TYPES[UA_TYPES_DOUBLE]);//线程4
     UA_Variant_setScalar(&staticValueSource2->value, pubCounterData2, &UA_TYPES[UA_TYPES_UINT64]);//线程4
@@ -572,6 +579,7 @@ addDataSetField(UA_Server *server) {
     UA_Variant_setScalar(&staticValueSource5->value, pubCounterData5, &UA_TYPES[UA_TYPES_BOOLEAN]);//线程4
     UA_Variant_setScalar(&staticValueSource6->value, pubCounterData6, &UA_TYPES[UA_TYPES_BOOLEAN]);//线程4
     UA_Variant_setScalar(&staticValueSource7->value, pubCounterData7, &UA_TYPES[UA_TYPES_BOOLEAN]);//线程4
+    UA_Variant_setScalar(&staticValueSource8->value, pubCounterData8, &UA_TYPES[UA_TYPES_UINT64]);//线程4
     counterValue.field.variable.rtValueSource.rtFieldSourceEnabled = UA_TRUE;
     counterValue.field.variable.rtValueSource.staticValueSource = &staticValueSource;
     counterValue1.field.variable.rtValueSource.rtFieldSourceEnabled = UA_TRUE;//线程4
@@ -588,7 +596,8 @@ addDataSetField(UA_Server *server) {
     counterValue6.field.variable.rtValueSource.staticValueSource = &staticValueSource6;//线程4
      counterValue7.field.variable.rtValueSource.rtFieldSourceEnabled = UA_TRUE;//线程4
     counterValue7.field.variable.rtValueSource.staticValueSource = &staticValueSource7;//线程4
-
+    counterValue8.field.variable.rtValueSource.rtFieldSourceEnabled = UA_TRUE;//线程4
+    counterValue8.field.variable.rtValueSource.staticValueSource = &staticValueSource8;//线程4
 #else
     pubCounterData = UA_UInt64_new();
     counterValue.dataSetFieldType                                   = UA_PUBSUB_DATASETFIELD_VARIABLE;
@@ -605,6 +614,7 @@ addDataSetField(UA_Server *server) {
      UA_Server_addDataSetField(server, publishedDataSetIdent, &counterValue5, &dataSetFieldIdent);
      UA_Server_addDataSetField(server, publishedDataSetIdent, &counterValue6, &dataSetFieldIdent);
     UA_Server_addDataSetField(server, publishedDataSetIdent, &counterValue7, &dataSetFieldIdent);
+    UA_Server_addDataSetField(server, publishedDataSetIdent, &counterValue8, &dataSetFieldIdent);
 }
 
 /**
@@ -806,9 +816,9 @@ void *userApplicationPubSub(void *arg) {
     nextnanosleeptimeUserApplication.tv_sec                      += SECONDS_SLEEP;
     nextnanosleeptimeUserApplication.tv_nsec                      = NANO_SECONDS_SLEEP_USER_APPLICATION;
     nanoSecondFieldConversion(&nextnanosleeptimeUserApplication);
-    UA_Variant pubrtpositon;
-      UA_Variant_init(&pubrtpositon);
-    *pubCounterData      = 0.00;
+    /*UA_Variant pubrtpositon;
+      UA_Variant_init(&pubrtpositon);*/
+    *pubCounterData8      = 0;
     for (UA_Int32 iterator = 0; iterator <  REPEATED_NODECOUNTS; iterator++)
     {
         *repeatedCounterData[iterator] = repeatedCounterValue;
@@ -818,9 +828,9 @@ void *userApplicationPubSub(void *arg) {
     while (running) {
         clock_nanosleep(CLOCKID, TIMER_ABSTIME, &nextnanosleeptimeUserApplication, NULL);
 #if defined(PUBLISHER)
-     UA_Server_readValue(server, rtpostionNode, &pubrtpositon);
+    // UA_Server_readValue(server, rtpostionNode, &pubrtpositon);
         //printf("位置%f\n",pubCounter.data);   
-       *pubCounterData      =*(UA_Double*)pubrtpositon.data;
+       *pubCounterData8      = *pubCounterData8+1;
       //  *pubCounterData      = *pubCounterData + 1.00;
         for (UA_Int32 iterator = 0; iterator <  REPEATED_NODECOUNTS; iterator++)
         {
@@ -851,7 +861,7 @@ void *userApplicationPubSub(void *arg) {
         clock_gettime(CLOCKID, &dataReceiveTime);
         UA_Variant_clear(&subCounter);
 #if defined(UPDATE_MEASUREMENTS)
-        updateMeasurementsPublisher(dataModificationTime, *pubCounterData);
+        updateMeasurementsPublisher(dataModificationTime, *pubCounterData8);
         printf("发送 %f\n,   %d.%d\n",*pubCounterData,dataModificationTime.tv_sec,dataModificationTime.tv_nsec);
        if (subCounterData > 0)
             updateMeasurementsSubscriber(dataReceiveTime, subCounterData);
@@ -884,7 +894,10 @@ void *thread1997(void *arg) {
     nanoSecondFieldConversion(&nextnanosleeptimeUserApplication);
     serverConfigStruct *serverConfig = (serverConfigStruct*)arg;
     server = serverConfig->ServerRun;
+    *pubCounterData=0.00;
     *pubCounterData1=0.00;
+    UA_Variant rtpostion;
+      UA_Variant_init(&rtpostion);
     UA_Variant pubcyclytime;
       UA_Variant_init(&pubcyclytime);
       UA_Variant pubQbvOffset;
@@ -899,15 +912,18 @@ void *thread1997(void *arg) {
       UA_Variant_init(&pubbacktozeroflag);  
           UA_Variant pubmoveflag;
       UA_Variant_init(&pubmoveflag);  
-   *pubCounterData2=0;
+    *pubCounterData2=0;
      *pubCounterData3=0;
     *pubCounterData4=0;
     *pubCounterData5=0;
     *pubCounterData6=0;
     *pubCounterData7=0;
+  *pubCounterData8=0;
     while (running) {
         clock_nanosleep(CLOCKID, TIMER_ABSTIME, &nextnanosleeptimeUserApplication, NULL);
 #if defined(PUBLISHER)
+        UA_Server_readValue(server, rtpostionNode, &rtpostion);
+       *pubCounterData      =*(UA_Double*)rtpostion.data;
           UA_Server_readValue(server, CycletimeTSNNode, &pubcyclytime);
        *pubCounterData1      =*(UA_Double*)pubcyclytime.data;
     UA_Server_readValue(server, QbvTSNNode, &pubQbvOffset);
@@ -922,8 +938,9 @@ void *thread1997(void *arg) {
        *pubCounterData6      =*(UA_Boolean*)pubbacktozeroflag.data;
        UA_Server_readValue(server, moveNode, &pubmoveflag);
        *pubCounterData7      =*(UA_Boolean*)pubmoveflag.data;
-        printf("线程4指针 1:%f, 2:%ld, 3:%d, 4:%d, 5:%d, 6:%d, 7:%d\n",*pubCounterData1,*pubCounterData2,*pubCounterData3,*pubCounterData4,
-        *pubCounterData5,*pubCounterData6,*pubCounterData7);
+      
+        printf("线程4指针0:%f, 1:%f, 2:%ld, 3:%d, 4:%d, 5:%d, 6:%d, 7:%d, 8:%ld\n",*pubCounterData,*pubCounterData1,*pubCounterData2,*pubCounterData3,*pubCounterData4,
+        *pubCounterData5,*pubCounterData6,*pubCounterData7,*pubCounterData8);
         clock_gettime(CLOCKID, &dataModificationTime);
 #endif
         nextnanosleeptimeUserApplication.tv_nsec += (CYCLE_TIME * MILLI_SECONDS);
